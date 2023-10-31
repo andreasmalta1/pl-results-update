@@ -50,8 +50,8 @@ def get_current_season_results():
             ]
         )
 
-    # if results_to_post:
-    #     post_results(results_to_post)
+    if results_to_post:
+        post_results(results_to_post)
 
     with open("last_result.json", "w") as json_file:
         json_file.write(json.dumps({"last_row": last_row}))
@@ -87,4 +87,10 @@ def get_team(team_name, teams):
             return int(team["team_id"]), team["database"]
 
 
-get_current_season_results()
+def main():
+    print("starting program")
+    get_current_season_results()
+
+
+if __name__ == "__main__":
+    main()
