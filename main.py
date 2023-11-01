@@ -57,6 +57,11 @@ def get_current_season_results():
     with open("last_result.json", "w") as json_file:
         json_file.write(json.dumps({"last_row": last_row}))
 
+    with open("last_result.json", "r") as json_file:
+        data = json.load(json_file)
+        last_row = data["last_row"]
+        print(last_row)
+
 
 def post_results(results):
     try:
