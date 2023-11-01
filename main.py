@@ -53,6 +53,7 @@ def get_current_season_results():
     if results_to_post:
         post_results(results_to_post)
 
+    print(last_row)
     with open("last_result.json", "w") as json_file:
         json_file.write(json.dumps({"last_row": last_row}))
 
@@ -61,18 +62,17 @@ def post_results(results):
     try:
         connection = psycopg2.connect(os.getenv("SQLALCHEMY_DATABASE_URI"))
         cursor = connection.cursor()
-        print(cursor)
 
         for result in results:
             result = tuple(result)
-            insert_query = """ INSERT INTO match (season, home_team_id, home_team_name, home_score, away_team_id, away_team_name, away_score, date) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
+            insert_query = """INSERT INTO match (season, home_team_id, home_team_name, home_score, away_team_id, away_team_name, away_score, date) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
             cursor.execute(insert_query, result)
 
             connection.commit()
-            print("Recordd inserted successfully into match table")
+            print("Record inserted successfully into match table")
 
     except (Exception, psycopg2.Error) as error:
-        print("Failed to insert record into mobile table", error)
+        print("Failed to insert record into table", error)
 
     finally:
         if connection:
@@ -88,7 +88,6 @@ def get_team(team_name, teams):
 
 
 def main():
-    print("starting program")
     get_current_season_results()
 
 
