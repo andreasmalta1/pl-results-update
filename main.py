@@ -1,17 +1,27 @@
 import os
 import pandas as pd
-import json
 import psycopg2
 from csv import DictReader
-from dotenv import load_dotenv
 
-load_dotenv()
+
+def connect_to_db():
+    connection = psycopg2.connect(os.getenv("SQLALCHEMY_DATABASE_URI"))
+    cursor = connection.cursor()
+    return connection, cursor
+
+
+def disconnect_from_db(connection, cursor):
+    if connection:
+        cursor.close()
+        connection.close()
+        print("PostgreSQL connection is closed")
 
 
 def get_current_season_results():
-    with open("last_result.json", "r") as json_file:
-        data = json.load(json_file)
-        last_row = data["last_row"]
+    conn, cur = connect_to_db()
+    get_last_row = """SELECT row FROM last_row LIMIT 1"""
+    cur.execute(get_last_row)
+    last_row = cur.fetchall()[0][0]
 
     teams = []
 
@@ -51,39 +61,35 @@ def get_current_season_results():
         )
 
     if results_to_post:
-        post_results(results_to_post)
+        post_results(results_to_post, conn, cur)
 
-    print(last_row)
-    with open("last_result.json", "w") as json_file:
-        json_file.write(json.dumps({"last_row": last_row}))
+    update_row(last_row, conn, cur)
 
-    with open("last_result.json", "r") as json_file:
-        data = json.load(json_file)
-        last_row = data["last_row"]
-        print(last_row)
+    disconnect_from_db(conn, cur)
 
 
-def post_results(results):
+def post_results(results, conn, cur):
     try:
-        connection = psycopg2.connect(os.getenv("SQLALCHEMY_DATABASE_URI"))
-        cursor = connection.cursor()
-
         for result in results:
             result = tuple(result)
             insert_query = """INSERT INTO match (season, home_team_id, home_team_name, home_score, away_team_id, away_team_name, away_score, date) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
-            cursor.execute(insert_query, result)
-
-            connection.commit()
+            cur.execute(insert_query, result)
+            conn.commit()
             print("Record inserted successfully into match table")
 
     except (Exception, psycopg2.Error) as error:
         print("Failed to insert record into table", error)
 
-    finally:
-        if connection:
-            cursor.close()
-            connection.close()
-            print("PostgreSQL connection is closed")
+
+def update_row(last_row, conn, cur):
+    try:
+        update_query = """UPDATE last_row SET row = %s"""
+        cur.execute(update_query, [last_row])
+        conn.commit()
+        print("Last row updated successfully")
+
+    except (Exception, psycopg2.Error) as error:
+        print("Failed to update last_row", error)
 
 
 def get_team(team_name, teams):
