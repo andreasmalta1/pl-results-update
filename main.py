@@ -2,6 +2,9 @@ import os
 import pandas as pd
 import psycopg2
 from csv import DictReader
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def connect_to_db():
